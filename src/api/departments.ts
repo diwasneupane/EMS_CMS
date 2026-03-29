@@ -2,7 +2,7 @@ import apiClient from '../lib/axios';
 import type { Department, PaginatedResponse, PaginationParams } from '../types';
 
 export const departmentsApi = {
-  getAll: async (params?: PaginationParams): Promise<PaginatedResponse<Department>> => {
+  getAll: async (params?: PaginationParams & { search?: string }): Promise<PaginatedResponse<Department>> => {
     const { data } = await apiClient.get('/departments', { params });
     return data;
   },

@@ -34,13 +34,20 @@ export default function AssignmentsPage() {
   const queryClient = useQueryClient();
   const { can } = usePermission();
   const [page, setPage] = useState(1);
+  const [semesterFilter, setSemesterFilter] = useState('');
+  const [teacherFilter, setTeacherFilter] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editItem, setEditItem] = useState<CourseAssignment | null>(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['course-assignments', page],
-    queryFn: () => courseAssignmentsApi.getAll({ page, limit: 10 }),
+    queryKey: ['course-assignments', page, semesterFilter, teacherFilter],
+    queryFn: () => {
+      const params = { page, limit: 10 };
+      if (semesterFilter) return courseAssignmentsApi.getBySemester(semesterFilter, params);
+      if (teacherFilter) return courseAssignmentsApi.getByTeacher(teacherFilter, params);
+      return courseAssignmentsApi.getAll(params);
+    },
   });
 
   const { data: coursesData } = useQuery({
@@ -167,6 +174,36 @@ export default function AssignmentsPage() {
       />
 
       <Card padding="none">
+        <div className="p-4 border-b border-slate-200 flex flex-wrap gap-3">
+          <select
+            value={semesterFilter}
+            onChange={(e) => { setSemesterFilter(e.target.value); setTeacherFilter(''); setPage(1); }}
+            className="text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+          >
+            <option value="">All Semesters</option>
+            {(semestersData?.items ?? []).map((s) => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
+          <select
+            value={teacherFilter}
+            onChange={(e) => { setTeacherFilter(e.target.value); setSemesterFilter(''); setPage(1); }}
+            className="text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+          >
+            <option value="">All Teachers</option>
+            {(teachersData?.items ?? []).map((t) => (
+              <option key={t.id} value={t.id}>{t.firstName} {t.lastName}</option>
+            ))}
+          </select>
+          {(semesterFilter || teacherFilter) && (
+            <button
+              onClick={() => { setSemesterFilter(''); setTeacherFilter(''); setPage(1); }}
+              className="text-xs text-slate-400 hover:text-slate-600 underline underline-offset-2 self-center"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
         <Table
           columns={columns}
           data={data?.items ?? []}

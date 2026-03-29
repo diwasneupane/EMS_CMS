@@ -45,8 +45,17 @@ export default function ResultsPage() {
   const [previewMarks, setPreviewMarks] = useState({ academic: 0, practical: 0 });
 
   const { data, isLoading } = useQuery({
-    queryKey: ['results', page],
-    queryFn: () => resultsApi.getAll({ page, limit: 10 }),
+    queryKey: ['results', page, courseFilter, semesterFilter],
+    queryFn: () => {
+      const params = { page, limit: 10 };
+      if (courseFilter && semesterFilter)
+        return resultsApi.getByCourseAndSemester(courseFilter, semesterFilter, params);
+      if (courseFilter)
+        return resultsApi.getByCourse(courseFilter, params);
+      if (semesterFilter)
+        return resultsApi.getBySemester(semesterFilter, params);
+      return resultsApi.getAll(params);
+    },
   });
 
   const { data: coursesData } = useQuery({ queryKey: ['courses-all'], queryFn: () => coursesApi.getAll({ limit: 100 }) });
@@ -261,11 +270,7 @@ export default function ResultsPage() {
         </div>
         <Table
           columns={columns}
-          data={(data?.items ?? []).filter((item) => {
-            const matchesCourse = !courseFilter || item.courseId === courseFilter;
-            const matchesSemester = !semesterFilter || item.semesterId === semesterFilter;
-            return matchesCourse && matchesSemester;
-          })}
+          data={data?.items ?? []}
           loading={isLoading}
           emptyTitle="No results found"
           emptyMessage="Add student results to get started."

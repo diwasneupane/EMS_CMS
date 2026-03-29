@@ -17,6 +17,16 @@ export const resultsApi = {
     return data;
   },
 
+  getByCourse: async (courseId: string, params?: PaginationParams): Promise<PaginatedResponse<Result>> => {
+    const { data } = await apiClient.get(`/results/course/${courseId}`, { params });
+    return data;
+  },
+
+  getBySemester: async (semesterId: string, params?: PaginationParams): Promise<PaginatedResponse<Result>> => {
+    const { data } = await apiClient.get(`/results/semester/${semesterId}`, { params });
+    return data;
+  },
+
   getByCourseAndSemester: async (courseId: string, semesterId: string, params?: PaginationParams): Promise<PaginatedResponse<Result>> => {
     const { data } = await apiClient.get(`/results/course/${courseId}/semester/${semesterId}`, { params });
     return data;

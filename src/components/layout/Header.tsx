@@ -121,6 +121,13 @@ export function Header({ onMenuToggle }: HeaderProps) {
 
               {/* Nav items */}
               <div className="py-1">
+                <button
+                  onClick={() => handleNav('/profile')}
+                  className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  <User className="w-4 h-4 text-slate-400" />
+                  My Profile
+                </button>
                 {isAdmin && (
                   <>
                     <button

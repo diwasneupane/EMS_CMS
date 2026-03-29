@@ -43,14 +43,20 @@ export default function ProgramsPage() {
   const { can } = usePermission();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [deptFilter, setDeptFilter] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editItem, setEditItem] = useState<Program | null>(null);
   const debouncedSearch = useDebounce(search);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['programs', page],
-    queryFn: () => programsApi.getAll({ page, limit: 10 }),
+    queryKey: ['programs', page, debouncedSearch, deptFilter],
+    queryFn: () => programsApi.getAll({
+      page,
+      limit: 10,
+      search: debouncedSearch || undefined,
+      departmentId: deptFilter || undefined,
+    }),
   });
 
   const { data: deptData } = useQuery({
@@ -210,21 +216,27 @@ export default function ProgramsPage() {
       />
 
       <Card padding="none">
-        <div className="p-4 border-b border-slate-200">
+        <div className="p-4 border-b border-slate-200 flex flex-wrap gap-3">
           <SearchInput
             value={search}
             onChange={(v) => { setSearch(v); setPage(1); }}
             placeholder="Search programs..."
-            className="max-w-xs"
+            className="max-w-xs flex-1"
           />
+          <select
+            value={deptFilter}
+            onChange={(e) => { setDeptFilter(e.target.value); setPage(1); }}
+            className="text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+          >
+            <option value="">All Departments</option>
+            {departmentOptions.map((d) => (
+              <option key={d.value} value={d.value}>{d.label}</option>
+            ))}
+          </select>
         </div>
         <Table
           columns={columns}
-          data={(data?.items ?? []).filter((item) =>
-            !debouncedSearch ||
-            item.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-            item.code.toLowerCase().includes(debouncedSearch.toLowerCase())
-          )}
+          data={data?.items ?? []}
           loading={isLoading}
           emptyTitle="No programs found"
           emptyMessage="Add your first program to get started."

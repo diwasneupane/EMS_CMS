@@ -356,8 +356,14 @@ export default function AnnouncementsPage() {
   const debouncedSearch = useDebounce(search);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["announcements", page],
-    queryFn: () => announcementsApi.getAll({ page, limit: 20 }),
+    queryKey: ["announcements", page, debouncedSearch, priorityFilter, targetFilter],
+    queryFn: () => announcementsApi.getAll({
+      page,
+      limit: 20,
+      search: debouncedSearch || undefined,
+      priority: priorityFilter || undefined,
+      targetRole: targetFilter || undefined,
+    }),
   });
 
   const {
@@ -478,24 +484,13 @@ export default function AnnouncementsPage() {
     }
   };
 
-  // Client-side filtering
   const allItems = data?.items ?? [];
-  const filteredItems = allItems.filter((item) => {
-    const matchesSearch =
-      !debouncedSearch ||
-      item.title.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-      item.content.toLowerCase().includes(debouncedSearch.toLowerCase());
-    const matchesPriority = !priorityFilter || item.priority === priorityFilter;
-    const matchesStatus =
-      !statusFilter ||
-      (statusFilter === "published" ? isPublished(item) : !isPublished(item));
-    const matchesTarget =
-      !targetFilter ||
-      (targetFilter === "all"
-        ? !item.targetRole || item.targetRole === "all"
-        : item.targetRole === targetFilter);
-    return matchesSearch && matchesPriority && matchesStatus && matchesTarget;
-  });
+  // status filter is client-side (backend has no isPublished param)
+  const filteredItems = statusFilter
+    ? allItems.filter((item) =>
+        statusFilter === "published" ? isPublished(item) : !isPublished(item)
+      )
+    : allItems;
 
   return (
     <div>

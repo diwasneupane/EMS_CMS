@@ -43,8 +43,13 @@ export default function CoursesPage() {
   const debouncedSearch = useDebounce(search);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['courses', page],
-    queryFn: () => coursesApi.getAll({ page, limit: 10 }),
+    queryKey: ['courses', page, debouncedSearch, filterDept],
+    queryFn: () => coursesApi.getAll({
+      page,
+      limit: 10,
+      search: debouncedSearch || undefined,
+      departmentId: filterDept || undefined,
+    }),
   });
 
   const { data: deptData } = useQuery({
@@ -208,13 +213,7 @@ export default function CoursesPage() {
         </div>
         <Table
           columns={columns}
-          data={(data?.items ?? []).filter((item) => {
-            const matchesSearch = !debouncedSearch ||
-              item.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-              item.code.toLowerCase().includes(debouncedSearch.toLowerCase());
-            const matchesDept = !filterDept || item.departmentId === filterDept;
-            return matchesSearch && matchesDept;
-          })}
+          data={data?.items ?? []}
           loading={isLoading}
           emptyTitle="No courses found"
           emptyMessage="Create your first course to get started."

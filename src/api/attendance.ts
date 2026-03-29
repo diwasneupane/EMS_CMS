@@ -1,6 +1,24 @@
 import apiClient from '../lib/axios';
 import type { Attendance, PaginatedResponse, PaginationParams, AttendanceReportParams } from '../types';
 
+export interface AttendanceGroup {
+  semesterId: string;
+  semesterName: string;
+  semesterCode: string;
+  courseId: string;
+  courseCode: string;
+  courseName: string;
+  date: string;
+  teacherId: string;
+  teacherName: string;
+  totalStudents: number;
+  present: number;
+  absent: number;
+  late: number;
+  excused: number;
+  attendanceRate: number;
+}
+
 export interface MarkAttendancePayload {
   courseId: string;
   semesterId: string;
@@ -15,6 +33,18 @@ export interface MarkAttendancePayload {
 }
 
 export const attendanceApi = {
+  // All attendance records paginated (admin/teacher view)
+  getAll: async (params?: PaginationParams): Promise<PaginatedResponse<Attendance>> => {
+    const { data } = await apiClient.get('/attendance', { params });
+    return data;
+  },
+
+  // Grouped summary view: one row per course+date session
+  getGrouped: async (params?: PaginationParams): Promise<{ items: AttendanceGroup[]; meta: { total: number; totalPages: number; page: number; limit: number } }> => {
+    const { data } = await apiClient.get('/attendance/grouped', { params });
+    return data;
+  },
+
   // Mark bulk attendance for a class session
   mark: async (payload: MarkAttendancePayload): Promise<Attendance[]> => {
     const { data } = await apiClient.post('/attendance/mark', payload);

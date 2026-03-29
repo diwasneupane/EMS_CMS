@@ -8,6 +8,7 @@ import {
 import { useAuthStore } from './store/authStore';
 import { DashboardLayout } from './components/layout/DashboardLayout';
 import LoginPage from './pages/auth/LoginPage';
+import ProfilePage from './pages/profile/ProfilePage';
 import DashboardPage from './pages/dashboard/DashboardPage';
 import UsersPage from './pages/users/UsersPage';
 import StudentsPage from './pages/users/StudentsPage';
@@ -98,6 +99,9 @@ export default function App() {
 
           {/* Communication */}
           <Route path="announcements" element={<AnnouncementsPage />} />
+
+          {/* Profile */}
+          <Route path="profile" element={<ProfilePage />} />
 
           {/* Reports */}
           <Route path="reports" element={<ReportsPage />} />

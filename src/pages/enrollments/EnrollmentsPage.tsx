@@ -21,7 +21,7 @@ import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { useDebounce } from '../../hooks/useDebounce';
 import { usePermission } from '../../hooks/usePermission';
-import { formatDate, getInitials } from '../../lib/utils';
+import { formatDate } from '../../lib/utils';
 import type { Enrollment } from '../../types';
 
 const schema = z.object({
@@ -41,12 +41,16 @@ export default function EnrollmentsPage() {
   const [semesterFilter, setSemesterFilter] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [editItem, setEditItem] = useState<Enrollment | null>(null);
   const debouncedSearch = useDebounce(search);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['enrollments', page],
-    queryFn: () => enrollmentsApi.getAll({ page, limit: 10 }),
+    queryKey: ['enrollments', page, courseFilter, semesterFilter, debouncedSearch],
+    queryFn: () => {
+      const params = { page, limit: 10, search: debouncedSearch || undefined };
+      if (courseFilter && semesterFilter)
+        return enrollmentsApi.getByCourseAndSemester(courseFilter, semesterFilter, params);
+      return enrollmentsApi.getAll(params);
+    },
   });
 
   const { data: coursesData } = useQuery({ queryKey: ['courses-all'], queryFn: () => coursesApi.getAll({ limit: 100 }) });
@@ -89,14 +93,12 @@ export default function EnrollmentsPage() {
   });
 
   const openCreate = () => {
-    setEditItem(null);
     reset({ studentId: '', courseId: '', semesterId: '' });
     setModalOpen(true);
   };
 
   const closeModal = () => {
     setModalOpen(false);
-    setEditItem(null);
     reset();
   };
 
@@ -117,16 +119,11 @@ export default function EnrollmentsPage() {
   const columns: Column<Enrollment>[] = [
     {
       header: 'Student', accessor: 'student', render: (_, row) => (
-        <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">
-            {row.student ? getInitials(row.student.firstName, row.student.lastName) : 'S'}
-          </div>
-          <div>
-            <p className="text-sm font-medium text-slate-800">
-              {row.student ? `${row.student.firstName} ${row.student.lastName}` : '-'}
-            </p>
-            <p className="text-xs text-slate-500">{row.student?.email}</p>
-          </div>
+        <div>
+          <p className="text-sm font-medium text-slate-800">
+            {row.student ? `${row.student.firstName} ${row.student.lastName}` : '-'}
+          </p>
+          <p className="text-xs text-slate-500">{row.student?.email}</p>
         </div>
       ),
     },
@@ -211,15 +208,7 @@ export default function EnrollmentsPage() {
         </div>
         <Table
           columns={columns}
-          data={(data?.items ?? []).filter((item) => {
-            const student = item.student;
-            const matchesSearch = !debouncedSearch ||
-              (student ? `${student.firstName} ${student.lastName}`.toLowerCase().includes(debouncedSearch.toLowerCase()) : false) ||
-              (item.course?.name ?? '').toLowerCase().includes(debouncedSearch.toLowerCase());
-            const matchesCourse = !courseFilter || item.courseId === courseFilter;
-            const matchesSemester = !semesterFilter || item.semesterId === semesterFilter;
-            return matchesSearch && matchesCourse && matchesSemester;
-          })}
+          data={data?.items ?? []}
           loading={isLoading}
           emptyTitle="No enrollments found"
           emptyMessage="Enroll students in courses to get started."

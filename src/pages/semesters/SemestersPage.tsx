@@ -44,8 +44,8 @@ export default function SemestersPage() {
   const debouncedSearch = useDebounce(search);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['semesters', page],
-    queryFn: () => semestersApi.getAll({ page, limit: 10 }),
+    queryKey: ['semesters', page, debouncedSearch],
+    queryFn: () => semestersApi.getAll({ page, limit: 10, search: debouncedSearch || undefined }),
   });
 
   const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
@@ -211,11 +211,7 @@ export default function SemestersPage() {
         </div>
         <Table
           columns={columns}
-          data={(data?.items ?? []).filter((item) =>
-            !debouncedSearch ||
-            item.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-            item.code.toLowerCase().includes(debouncedSearch.toLowerCase())
-          )}
+          data={data?.items ?? []}
           loading={isLoading}
           emptyTitle="No semesters found"
           emptyMessage="Create your first semester to get started."

@@ -44,8 +44,8 @@ export default function DepartmentsPage() {
   const debouncedSearch = useDebounce(search);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['departments', page],
-    queryFn: () => departmentsApi.getAll({ page, limit: 10 }),
+    queryKey: ['departments', page, debouncedSearch],
+    queryFn: () => departmentsApi.getAll({ page, limit: 10, search: debouncedSearch || undefined }),
   });
 
   const {
@@ -188,11 +188,7 @@ export default function DepartmentsPage() {
 
         <Table
           columns={columns}
-          data={(data?.items ?? []).filter((item) =>
-            !debouncedSearch ||
-            item.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-            item.code.toLowerCase().includes(debouncedSearch.toLowerCase())
-          )}
+          data={data?.items ?? []}
           loading={isLoading}
           emptyTitle="No departments found"
           emptyMessage="Create your first department to get started."

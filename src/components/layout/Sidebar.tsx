@@ -22,7 +22,7 @@ import {
   GraduationCap as Logo,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { useAuth } from '../../hooks/useAuth';
+import { usePermission } from '../../hooks/usePermission';
 import { Badge } from '../ui/Badge';
 
 interface NavItem {
@@ -30,6 +30,7 @@ interface NavItem {
   path: string;
   icon: React.ReactNode;
   adminOnly?: boolean;
+  permission?: [string, string];
   badgeCount?: number;
 }
 
@@ -46,7 +47,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isOpen, onClose, pendingCount = 0 }: SidebarProps) {
-  const { isAdmin } = useAuth();
+  const { can, isAdmin } = usePermission();
   const location = useLocation();
 
   const navGroups: NavGroup[] = [
@@ -67,21 +68,25 @@ export function Sidebar({ isOpen, onClose, pendingCount = 0 }: SidebarProps) {
           label: 'Departments',
           path: '/departments',
           icon: <Building2 className="w-4 h-4" />,
+          permission: ['departments', 'read'],
         },
         {
           label: 'Programs',
           path: '/programs',
           icon: <GraduationCap className="w-4 h-4" />,
+          permission: ['programs', 'read'],
         },
         {
           label: 'Courses',
           path: '/courses',
           icon: <BookOpen className="w-4 h-4" />,
+          permission: ['courses', 'read'],
         },
         {
           label: 'Semesters',
           path: '/semesters',
           icon: <Calendar className="w-4 h-4" />,
+          permission: ['semesters', 'read'],
         },
       ],
     },
@@ -92,11 +97,13 @@ export function Sidebar({ isOpen, onClose, pendingCount = 0 }: SidebarProps) {
           label: 'Class Schedules',
           path: '/schedules',
           icon: <Clock className="w-4 h-4" />,
+          permission: ['schedules', 'read'],
         },
         {
           label: 'Course Assignments',
           path: '/assignments',
           icon: <ClipboardList className="w-4 h-4" />,
+          permission: ['assignments', 'read'],
         },
       ],
     },
@@ -113,11 +120,13 @@ export function Sidebar({ isOpen, onClose, pendingCount = 0 }: SidebarProps) {
           label: 'Students',
           path: '/users/students',
           icon: <UserCheck className="w-4 h-4" />,
+          permission: ['users', 'read'],
         },
         {
           label: 'Teachers',
           path: '/users/teachers',
           icon: <Briefcase className="w-4 h-4" />,
+          permission: ['users', 'read'],
         },
         {
           label: 'Pending Approvals',
@@ -135,16 +144,19 @@ export function Sidebar({ isOpen, onClose, pendingCount = 0 }: SidebarProps) {
           label: 'Enrollments',
           path: '/enrollments',
           icon: <BookMarked className="w-4 h-4" />,
+          permission: ['enrollments', 'read'],
         },
         {
           label: 'Attendance',
           path: '/attendance',
           icon: <CheckSquare className="w-4 h-4" />,
+          permission: ['attendance', 'read'],
         },
         {
           label: 'Results',
           path: '/results',
           icon: <BarChart3 className="w-4 h-4" />,
+          permission: ['results', 'read'],
         },
       ],
     },
@@ -155,6 +167,7 @@ export function Sidebar({ isOpen, onClose, pendingCount = 0 }: SidebarProps) {
           label: 'Announcements',
           path: '/announcements',
           icon: <Bell className="w-4 h-4" />,
+          permission: ['announcements', 'read'],
         },
       ],
     },
@@ -232,7 +245,11 @@ export function Sidebar({ isOpen, onClose, pendingCount = 0 }: SidebarProps) {
         <nav className="flex-1 overflow-y-auto py-4 scrollbar-thin">
           {navGroups.map((group) => {
             if (group.adminOnly && !isAdmin) return null;
-            const visibleItems = group.items.filter((item) => !item.adminOnly || isAdmin);
+            const visibleItems = group.items.filter((item) => {
+              if (item.adminOnly && !isAdmin) return false;
+              if (item.permission) return can(item.permission[0], item.permission[1]);
+              return true;
+            });
             if (visibleItems.length === 0) return null;
 
             return (
