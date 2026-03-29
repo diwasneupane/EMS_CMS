@@ -7,6 +7,7 @@ import { coursesApi } from '../../api/courses';
 import { semestersApi } from '../../api/semesters';
 import { enrollmentsApi } from '../../api/enrollments';
 import { useAuth } from '../../hooks/useAuth';
+import { usePermission } from '../../hooks/usePermission';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
@@ -28,6 +29,7 @@ const STATUS_OPTIONS: { value: AttendanceStatus; label: string; color: string }[
 export default function AttendancePage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { can } = usePermission();
   const [activeTab, setActiveTab] = useState<'mark' | 'records'>('mark');
   const [courseFilter, setCourseFilter] = useState('');
   const [semesterFilter, setSemesterFilter] = useState('');
@@ -208,15 +210,17 @@ export default function AttendancePage() {
                 Date: {formatDate(selectedDate)} &bull; {enrollments.length} students
               </p>
             </div>
-            <Button
-              variant="primary"
-              leftIcon={<Save className="w-4 h-4" />}
-              onClick={handleSubmitAttendance}
-              isLoading={markMutation.isPending}
-              disabled={enrollments.length === 0}
-            >
-              Save Attendance
-            </Button>
+            {can('attendance', 'create') && (
+              <Button
+                variant="primary"
+                leftIcon={<Save className="w-4 h-4" />}
+                onClick={handleSubmitAttendance}
+                isLoading={markMutation.isPending}
+                disabled={enrollments.length === 0}
+              >
+                Save Attendance
+              </Button>
+            )}
           </div>
 
           {!courseFilter || !semesterFilter ? (

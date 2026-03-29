@@ -17,6 +17,7 @@ import { Pagination } from '../../components/ui/Pagination';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { Card } from '../../components/ui/Card';
 import { useDebounce } from '../../hooks/useDebounce';
+import { usePermission } from '../../hooks/usePermission';
 import { formatDate } from '../../lib/utils';
 import type { Department } from '../../types';
 
@@ -34,6 +35,7 @@ type FormData = z.infer<typeof schema>;
 
 export default function DepartmentsPage() {
   const queryClient = useQueryClient();
+  const { can } = usePermission();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
@@ -132,26 +134,30 @@ export default function DepartmentsPage() {
     { header: 'Created', accessor: 'createdAt', render: (_, row) => (
       <span className="text-slate-500 text-sm">{formatDate(row.createdAt)}</span>
     )},
-    {
+    ...(can('departments', 'update') || can('departments', 'delete') ? [{
       header: 'Actions',
-      accessor: 'id',
-      render: (_, row) => (
+      accessor: 'id' as keyof Department,
+      render: (_: unknown, row: Department) => (
         <div className="flex items-center gap-1">
-          <button
-            onClick={() => openEdit(row)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-primary-600 hover:bg-primary-50 transition-colors"
-          >
-            <Pencil className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setDeleteId(row.id)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          {can('departments', 'update') && (
+            <button
+              onClick={() => openEdit(row)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-primary-600 hover:bg-primary-50 transition-colors"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
+          )}
+          {can('departments', 'delete') && (
+            <button
+              onClick={() => setDeleteId(row.id)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
         </div>
       ),
-    },
+    }] : []),
   ];
 
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
@@ -162,9 +168,11 @@ export default function DepartmentsPage() {
         title="Departments"
         description="Manage academic departments in the system"
         action={
-          <Button variant="primary" leftIcon={<Plus className="w-4 h-4" />} onClick={openCreate}>
-            Add Department
-          </Button>
+          can('departments', 'create') ? (
+            <Button variant="primary" leftIcon={<Plus className="w-4 h-4" />} onClick={openCreate}>
+              Add Department
+            </Button>
+          ) : undefined
         }
       />
 

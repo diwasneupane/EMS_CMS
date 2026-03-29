@@ -20,6 +20,7 @@ import { SearchInput } from '../../components/ui/SearchInput';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { useDebounce } from '../../hooks/useDebounce';
+import { usePermission } from '../../hooks/usePermission';
 import { formatDate, getInitials } from '../../lib/utils';
 import type { User } from '../../types';
 
@@ -37,6 +38,7 @@ type FormData = z.infer<typeof schema>;
 
 export default function UsersPage() {
   const queryClient = useQueryClient();
+  const { can } = usePermission();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
@@ -196,18 +198,24 @@ export default function UsersPage() {
         <span className="text-sm text-slate-500">{formatDate(row.createdAt)}</span>
       ),
     },
-    {
-      header: 'Actions', accessor: 'id', render: (_, row) => (
+    ...(can('users', 'update') || can('users', 'delete') ? [{
+      header: 'Actions',
+      accessor: 'id' as keyof User,
+      render: (_: unknown, row: User) => (
         <div className="flex items-center gap-1">
-          <button onClick={() => openEdit(row)} className="p-1.5 rounded-lg text-slate-400 hover:text-primary-600 hover:bg-primary-50 transition-colors">
-            <Pencil className="w-4 h-4" />
-          </button>
-          <button onClick={() => setDeleteId(row.id)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors">
-            <Trash2 className="w-4 h-4" />
-          </button>
+          {can('users', 'update') && (
+            <button onClick={() => openEdit(row)} className="p-1.5 rounded-lg text-slate-400 hover:text-primary-600 hover:bg-primary-50 transition-colors">
+              <Pencil className="w-4 h-4" />
+            </button>
+          )}
+          {can('users', 'delete') && (
+            <button onClick={() => setDeleteId(row.id)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
         </div>
       ),
-    },
+    }] : []),
   ];
 
   return (
@@ -216,9 +224,11 @@ export default function UsersPage() {
         title="All Users"
         description="Manage all users in the system"
         action={
-          <Button variant="primary" leftIcon={<Plus className="w-4 h-4" />} onClick={openCreate}>
-            Add User
-          </Button>
+          can('users', 'create') ? (
+            <Button variant="primary" leftIcon={<Plus className="w-4 h-4" />} onClick={openCreate}>
+              Add User
+            </Button>
+          ) : undefined
         }
       />
 

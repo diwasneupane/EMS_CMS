@@ -18,6 +18,7 @@ import { Card, CardHeader } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Spinner } from '../../components/ui/Spinner';
 import { formatDate, cn } from '../../lib/utils';
+import { usePermission } from '../../hooks/usePermission';
 import type { Role, Permission, RolePermission } from '../../types';
 
 const schema = z.object({
@@ -57,6 +58,7 @@ const RESOURCE_COLORS: Record<string, string> = {
 
 export default function RolesPage() {
   const queryClient = useQueryClient();
+  const { can } = usePermission();
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editItem, setEditItem] = useState<Role | null>(null);
@@ -238,12 +240,16 @@ export default function RolesPage() {
           >
             <ChevronDown className={cn('w-4 h-4 transition-transform', expandedRole === row.id && 'rotate-180')} />
           </button>
-          <button onClick={() => openEdit(row)} className="p-1.5 rounded-lg text-slate-400 hover:text-primary-600 hover:bg-primary-50 transition-colors">
-            <Pencil className="w-4 h-4" />
-          </button>
-          <button onClick={() => setDeleteId(row.id)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors">
-            <Trash2 className="w-4 h-4" />
-          </button>
+          {can('roles', 'update') && (
+            <button onClick={() => openEdit(row)} className="p-1.5 rounded-lg text-slate-400 hover:text-primary-600 hover:bg-primary-50 transition-colors">
+              <Pencil className="w-4 h-4" />
+            </button>
+          )}
+          {can('roles', 'delete') && (
+            <button onClick={() => setDeleteId(row.id)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
         </div>
       ),
     },
@@ -255,14 +261,20 @@ export default function RolesPage() {
         title="Roles & Permissions"
         description="Manage system roles and their permission sets"
         action={
-          <div className="flex gap-2">
-            <Button variant="secondary" leftIcon={<Users className="w-4 h-4" />} onClick={() => setAssignModal(true)}>
-              Assign Role
-            </Button>
-            <Button variant="primary" leftIcon={<Plus className="w-4 h-4" />} onClick={openCreate}>
-              Create Role
-            </Button>
-          </div>
+          (can('roles', 'create') || can('roles', 'update')) ? (
+            <div className="flex gap-2">
+              {can('roles', 'update') && (
+                <Button variant="secondary" leftIcon={<Users className="w-4 h-4" />} onClick={() => setAssignModal(true)}>
+                  Assign Role
+                </Button>
+              )}
+              {can('roles', 'create') && (
+                <Button variant="primary" leftIcon={<Plus className="w-4 h-4" />} onClick={openCreate}>
+                  Create Role
+                </Button>
+              )}
+            </div>
+          ) : undefined
         }
       />
 

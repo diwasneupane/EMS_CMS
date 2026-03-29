@@ -18,6 +18,7 @@ import { Pagination } from '../../components/ui/Pagination';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { Card } from '../../components/ui/Card';
 import { useDebounce } from '../../hooks/useDebounce';
+import { usePermission } from '../../hooks/usePermission';
 import { formatDate } from '../../lib/utils';
 import type { Course } from '../../types';
 
@@ -32,6 +33,7 @@ type FormData = z.infer<typeof schema>;
 
 export default function CoursesPage() {
   const queryClient = useQueryClient();
+  const { can } = usePermission();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [filterDept, setFilterDept] = useState('');
@@ -151,18 +153,24 @@ export default function CoursesPage() {
         <span className="text-sm text-slate-500">{formatDate(row.createdAt)}</span>
       ),
     },
-    {
-      header: 'Actions', accessor: 'id', render: (_, row) => (
+    ...(can('courses', 'update') || can('courses', 'delete') ? [{
+      header: 'Actions',
+      accessor: 'id' as keyof Course,
+      render: (_: unknown, row: Course) => (
         <div className="flex items-center gap-1">
-          <button onClick={() => openEdit(row)} className="p-1.5 rounded-lg text-slate-400 hover:text-primary-600 hover:bg-primary-50 transition-colors">
-            <Pencil className="w-4 h-4" />
-          </button>
-          <button onClick={() => setDeleteId(row.id)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors">
-            <Trash2 className="w-4 h-4" />
-          </button>
+          {can('courses', 'update') && (
+            <button onClick={() => openEdit(row)} className="p-1.5 rounded-lg text-slate-400 hover:text-primary-600 hover:bg-primary-50 transition-colors">
+              <Pencil className="w-4 h-4" />
+            </button>
+          )}
+          {can('courses', 'delete') && (
+            <button onClick={() => setDeleteId(row.id)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
         </div>
       ),
-    },
+    }] : []),
   ];
 
   return (
@@ -171,9 +179,11 @@ export default function CoursesPage() {
         title="Courses"
         description="Manage courses across all departments"
         action={
-          <Button variant="primary" leftIcon={<Plus className="w-4 h-4" />} onClick={openCreate}>
-            Add Course
-          </Button>
+          can('courses', 'create') ? (
+            <Button variant="primary" leftIcon={<Plus className="w-4 h-4" />} onClick={openCreate}>
+              Add Course
+            </Button>
+          ) : undefined
         }
       />
 

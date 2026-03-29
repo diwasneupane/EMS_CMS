@@ -19,7 +19,7 @@ import type { Column } from '../../components/ui/Table';
 import { Pagination } from '../../components/ui/Pagination';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
-import { useDebounce } from '../../hooks/useDebounce';
+import { usePermission } from '../../hooks/usePermission';
 import { formatTime } from '../../lib/utils';
 import type { ClassSchedule } from '../../types';
 
@@ -40,6 +40,7 @@ type FormData = z.infer<typeof schema>;
 
 export default function SchedulesPage() {
   const queryClient = useQueryClient();
+  const { can } = usePermission();
   const [page, setPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -194,18 +195,24 @@ export default function SchedulesPage() {
         </span>
       ),
     },
-    {
-      header: 'Actions', accessor: 'id', render: (_, row) => (
+    ...(can('schedules', 'update') || can('schedules', 'delete') ? [{
+      header: 'Actions',
+      accessor: 'id' as keyof ClassSchedule,
+      render: (_: unknown, row: ClassSchedule) => (
         <div className="flex items-center gap-1">
-          <button onClick={() => openEdit(row)} className="p-1.5 rounded-lg text-slate-400 hover:text-primary-600 hover:bg-primary-50 transition-colors">
-            <Pencil className="w-4 h-4" />
-          </button>
-          <button onClick={() => setDeleteId(row.id)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors">
-            <Trash2 className="w-4 h-4" />
-          </button>
+          {can('schedules', 'update') && (
+            <button onClick={() => openEdit(row)} className="p-1.5 rounded-lg text-slate-400 hover:text-primary-600 hover:bg-primary-50 transition-colors">
+              <Pencil className="w-4 h-4" />
+            </button>
+          )}
+          {can('schedules', 'delete') && (
+            <button onClick={() => setDeleteId(row.id)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors">
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
         </div>
       ),
-    },
+    }] : []),
   ];
 
   return (
@@ -214,9 +221,11 @@ export default function SchedulesPage() {
         title="Class Schedules"
         description="Manage weekly class timetables"
         action={
-          <Button variant="primary" leftIcon={<Plus className="w-4 h-4" />} onClick={openCreate}>
-            Add Schedule
-          </Button>
+          can('schedules', 'create') ? (
+            <Button variant="primary" leftIcon={<Plus className="w-4 h-4" />} onClick={openCreate}>
+              Add Schedule
+            </Button>
+          ) : undefined
         }
       />
 

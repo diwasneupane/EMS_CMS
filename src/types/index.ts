@@ -222,6 +222,8 @@ export interface Announcement {
   department?: Department;
   createdAt: string;
   updatedAt: string;
+  publishedAt?: Date;
+  createdBy?: User;
 }
 
 export interface Permission {

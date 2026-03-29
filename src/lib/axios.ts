@@ -59,6 +59,12 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // Never attempt token refresh on auth endpoints — let login/refresh errors propagate
+    const url: string = originalRequest.url ?? '';
+    if (url.includes('/auth/')) {
+      return Promise.reject(error);
+    }
+
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {

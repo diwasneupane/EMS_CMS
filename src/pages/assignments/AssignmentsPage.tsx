@@ -19,6 +19,7 @@ import { Pagination } from '../../components/ui/Pagination';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { formatDate } from '../../lib/utils';
+import { usePermission } from '../../hooks/usePermission';
 import type { CourseAssignment } from '../../types';
 
 const schema = z.object({
@@ -31,6 +32,7 @@ type FormData = z.infer<typeof schema>;
 
 export default function AssignmentsPage() {
   const queryClient = useQueryClient();
+  const { can } = usePermission();
   const [page, setPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -137,15 +139,17 @@ export default function AssignmentsPage() {
         <span className="text-sm text-slate-500">{formatDate(row.createdAt)}</span>
       ),
     },
-    {
-      header: 'Actions', accessor: 'id', render: (_, row) => (
+    ...(can('assignments', 'delete') ? [{
+      header: 'Actions',
+      accessor: 'id' as keyof CourseAssignment,
+      render: (_: unknown, row: CourseAssignment) => (
         <div className="flex items-center gap-1">
           <button onClick={() => setDeleteId(row.id)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors">
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
       ),
-    },
+    }] : []),
   ];
 
   return (
@@ -154,9 +158,11 @@ export default function AssignmentsPage() {
         title="Course Assignments"
         description="Assign teachers to courses for each semester"
         action={
-          <Button variant="primary" leftIcon={<Plus className="w-4 h-4" />} onClick={openCreate}>
-            Assign Course
-          </Button>
+          can('assignments', 'create') ? (
+            <Button variant="primary" leftIcon={<Plus className="w-4 h-4" />} onClick={openCreate}>
+              Assign Course
+            </Button>
+          ) : undefined
         }
       />
 

@@ -20,6 +20,7 @@ import { SearchInput } from '../../components/ui/SearchInput';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { useDebounce } from '../../hooks/useDebounce';
+import { usePermission } from '../../hooks/usePermission';
 import { formatDate, getInitials } from '../../lib/utils';
 import type { Enrollment } from '../../types';
 
@@ -33,6 +34,7 @@ type FormData = z.infer<typeof schema>;
 
 export default function EnrollmentsPage() {
   const queryClient = useQueryClient();
+  const { can } = usePermission();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [courseFilter, setCourseFilter] = useState('');
@@ -151,15 +153,17 @@ export default function EnrollmentsPage() {
         <span className="text-sm text-slate-500">{formatDate(row.createdAt)}</span>
       ),
     },
-    {
-      header: 'Actions', accessor: 'id', render: (_, row) => (
+    ...(can('enrollments', 'delete') ? [{
+      header: 'Actions',
+      accessor: 'id' as keyof Enrollment,
+      render: (_: unknown, row: Enrollment) => (
         <div className="flex items-center gap-1">
           <button onClick={() => setDeleteId(row.id)} className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors">
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
       ),
-    },
+    }] : []),
   ];
 
   return (
@@ -168,9 +172,11 @@ export default function EnrollmentsPage() {
         title="Enrollments"
         description="Manage student course enrollments"
         action={
-          <Button variant="primary" leftIcon={<Plus className="w-4 h-4" />} onClick={openCreate}>
-            Add Enrollment
-          </Button>
+          can('enrollments', 'create') ? (
+            <Button variant="primary" leftIcon={<Plus className="w-4 h-4" />} onClick={openCreate}>
+              Add Enrollment
+            </Button>
+          ) : undefined
         }
       />
 
