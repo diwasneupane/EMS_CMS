@@ -51,6 +51,7 @@ export default function AttendancePage() {
   const [semesterFilter, setSemesterFilter] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [attendanceMap, setAttendanceMap] = useState<Record<string, AttendanceStatus>>({});
+  const [remarksMap, setRemarksMap] = useState<Record<string, string>>({});
   const [recordPage, setRecordPage] = useState(1);
   const [detailGroup, setDetailGroup] = useState<AttendanceGroup | null>(null);
 
@@ -119,6 +120,7 @@ export default function AttendancePage() {
       queryClient.invalidateQueries({ queryKey: ['attendance-grouped'] });
       toast.success('Attendance saved successfully');
       setAttendanceMap({});
+      setRemarksMap({});
     },
     onError: (err: unknown) => {
       const e = err as { response?: { data?: { message?: string } } };
@@ -145,6 +147,7 @@ export default function AttendancePage() {
       studentId: enrollment.studentId,
       enrollmentId: enrollment.id,
       status: attendanceMap[enrollment.studentId] ?? 'present',
+      remarks: remarksMap[enrollment.studentId] || undefined,
     }));
     markMutation.mutate({
       courseId: courseFilter,
@@ -291,32 +294,45 @@ export default function AttendancePage() {
                 const student = enrollment.student;
                 if (!student) return null;
                 return (
-                  <div key={enrollment.id} className="flex items-center justify-between px-4 py-3 hover:bg-slate-50">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">
-                        {getInitials(student.firstName, student.lastName)}
+                  <div key={enrollment.id} className="px-4 py-3 hover:bg-slate-50">
+                    <div className="flex items-center justify-between gap-4 flex-wrap">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold flex-shrink-0">
+                          {getInitials(student.firstName, student.lastName)}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-slate-800">
+                            {student.firstName} {student.lastName}
+                          </p>
+                          <p className="text-xs text-slate-500">{student.enrollmentNumber ?? student.email}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-slate-800">
-                          {student.firstName} {student.lastName}
-                        </p>
-                        <p className="text-xs text-slate-500">{student.enrollmentNumber ?? student.email}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {STATUS_OPTIONS.map((opt) => (
+                          <label key={opt.value} className="flex items-center gap-1.5 cursor-pointer">
+                            <input
+                              type="radio"
+                              name={`attendance-${enrollment.studentId}`}
+                              value={opt.value}
+                              checked={(attendanceMap[enrollment.studentId] ?? 'present') === opt.value}
+                              onChange={() => handleStatusChange(enrollment.studentId, opt.value)}
+                              className="w-3.5 h-3.5 text-primary-600"
+                            />
+                            <span className="text-xs font-medium text-slate-600">{opt.label}</span>
+                          </label>
+                        ))}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {STATUS_OPTIONS.map((opt) => (
-                        <label key={opt.value} className="flex items-center gap-1.5 cursor-pointer">
-                          <input
-                            type="radio"
-                            name={`attendance-${enrollment.studentId}`}
-                            value={opt.value}
-                            checked={(attendanceMap[enrollment.studentId] ?? 'present') === opt.value}
-                            onChange={() => handleStatusChange(enrollment.studentId, opt.value)}
-                            className="w-3.5 h-3.5 text-primary-600"
-                          />
-                          <span className="text-xs font-medium text-slate-600">{opt.label}</span>
-                        </label>
-                      ))}
+                    <div className="mt-2 pl-11">
+                      <input
+                        type="text"
+                        value={remarksMap[enrollment.studentId] ?? ''}
+                        onChange={(e) =>
+                          setRemarksMap((prev) => ({ ...prev, [enrollment.studentId]: e.target.value }))
+                        }
+                        placeholder="Remarks (optional)"
+                        className="w-full text-xs border border-slate-200 rounded-md px-2.5 py-1.5 text-slate-600 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-primary-400 bg-white"
+                      />
                     </div>
                   </div>
                 );

@@ -197,6 +197,8 @@ export interface Result {
   totalMark?: number;
   grade?: string;
   gpa?: number;
+  gradePoint?: number;
+  attendancePercentage?: number;
   remarks?: string;
   student?: User;
   course?: Course;
