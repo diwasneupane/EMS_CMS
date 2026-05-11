@@ -46,7 +46,13 @@ export default function EnrollmentsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['enrollments', page, courseFilter, semesterFilter, debouncedSearch],
     queryFn: () => {
-      const params = { page, limit: 10, search: debouncedSearch || undefined };
+      const params = {
+        page,
+        limit: 10,
+        search: debouncedSearch || undefined,
+        courseId: courseFilter || undefined,
+        semesterId: semesterFilter || undefined,
+      };
       if (courseFilter && semesterFilter)
         return enrollmentsApi.getByCourseAndSemester(courseFilter, semesterFilter, params);
       return enrollmentsApi.getAll(params);
