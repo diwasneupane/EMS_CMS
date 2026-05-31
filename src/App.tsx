@@ -26,6 +26,8 @@ import ResultsPage from './pages/results/ResultsPage';
 import AnnouncementsPage from './pages/announcements/AnnouncementsPage';
 import ReportsPage from './pages/reports/ReportsPage';
 import RolesPage from './pages/roles/RolesPage';
+import InquiriesPage from './pages/inquiries/InquiriesPage';
+import ContactMessagesPage from './pages/contacts/ContactMessagesPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -105,6 +107,24 @@ export default function App() {
 
           {/* Reports */}
           <Route path="reports" element={<ReportsPage />} />
+
+          {/* Inquiries & Contacts */}
+          <Route
+            path="inquiries"
+            element={
+              <AdminRoute>
+                <InquiriesPage />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="contacts"
+            element={
+              <AdminRoute>
+                <ContactMessagesPage />
+              </AdminRoute>
+            }
+          />
 
           {/* Settings (admin only) */}
           <Route

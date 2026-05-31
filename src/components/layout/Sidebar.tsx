@@ -20,6 +20,8 @@ import {
   Shield,
   X,
   GraduationCap as Logo,
+  Inbox,
+  Mail,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { usePermission } from '../../hooks/usePermission';
@@ -168,6 +170,24 @@ export function Sidebar({ isOpen, onClose, pendingCount = 0 }: SidebarProps) {
           path: '/announcements',
           icon: <Bell className="w-4 h-4" />,
           permission: ['announcements', 'read'],
+        },
+      ],
+    },
+    {
+      title: 'INQUIRIES',
+      adminOnly: true,
+      items: [
+        {
+          label: 'Admission Inquiries',
+          path: '/inquiries',
+          icon: <Inbox className="w-4 h-4" />,
+          adminOnly: true,
+        },
+        {
+          label: 'Contact Messages',
+          path: '/contacts',
+          icon: <Mail className="w-4 h-4" />,
+          adminOnly: true,
         },
       ],
     },

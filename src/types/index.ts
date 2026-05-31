@@ -328,3 +328,36 @@ export interface ApiError {
 
 /** Max items per page the backend accepts */
 export const MAX_PAGE_LIMIT = 100;
+
+export type InquiryProgram = 'BHM' | 'MBA' | 'BBA' | 'BCS' | 'BIT';
+export type InquiryStatus = 'new' | 'read' | 'replied';
+
+export interface Inquiry {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  program: InquiryProgram;
+  address?: string | null;
+  guardianName?: string | null;
+  guardianPhone?: string | null;
+  message?: string | null;
+  status: InquiryStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type ContactStatus = 'new' | 'read' | 'replied';
+
+export interface Contact {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  inquiryType?: string | null;
+  message: string;
+  status: ContactStatus;
+  createdAt: string;
+  updatedAt: string;
+}
