@@ -3,10 +3,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, BookOpen } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { programsApi } from '../../api/programs';
 import { departmentsApi } from '../../api/departments';
+import { coursesApi } from '../../api/courses';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -47,6 +48,7 @@ export default function ProgramsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editItem, setEditItem] = useState<Program | null>(null);
+  const [curriculumProgram, setCurriculumProgram] = useState<Program | null>(null);
   const debouncedSearch = useDebounce(search);
 
   const { data, isLoading } = useQuery({
@@ -62,6 +64,12 @@ export default function ProgramsPage() {
   const { data: deptData } = useQuery({
     queryKey: ['departments-all'],
     queryFn: () => departmentsApi.getAll({ limit: 100 }),
+  });
+
+  const { data: curriculumData, isLoading: curriculumLoading } = useQuery({
+    queryKey: ['program-curriculum', curriculumProgram?.id],
+    queryFn: () => coursesApi.getByProgram(curriculumProgram!.id),
+    enabled: !!curriculumProgram,
   });
 
   const departmentOptions = (deptData?.items ?? []).map((d) => ({
@@ -179,11 +187,18 @@ export default function ProgramsPage() {
         <span className="text-sm text-slate-500">{formatDate(row.createdAt)}</span>
       ),
     },
-    ...(can('programs', 'update') || can('programs', 'delete') ? [{
+    {
       header: 'Actions',
       accessor: 'id' as keyof Program,
       render: (_: unknown, row: Program) => (
         <div className="flex items-center gap-1">
+          <button
+            onClick={() => setCurriculumProgram(row)}
+            title="View Curriculum"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+          >
+            <BookOpen className="w-4 h-4" />
+          </button>
           {can('programs', 'update') && (
             <button onClick={() => openEdit(row)} className="p-1.5 rounded-lg text-slate-400 hover:text-primary-600 hover:bg-primary-50 transition-colors">
               <Pencil className="w-4 h-4" />
@@ -196,7 +211,7 @@ export default function ProgramsPage() {
           )}
         </div>
       ),
-    }] : []),
+    },
   ];
 
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
@@ -287,6 +302,52 @@ export default function ProgramsPage() {
         message="Are you sure you want to delete this program? This action cannot be undone."
         isLoading={deleteMutation.isPending}
       />
+
+      <Modal
+        isOpen={!!curriculumProgram}
+        onClose={() => setCurriculumProgram(null)}
+        title={curriculumProgram ? `${curriculumProgram.code} – Curriculum` : 'Curriculum'}
+        size="xl"
+        hideFooter
+      >
+        {curriculumLoading && (
+          <div className="py-8 text-center text-sm text-slate-500">Loading curriculum...</div>
+        )}
+        {!curriculumLoading && curriculumData && (
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+            <p className="text-sm text-slate-500">{curriculumData.totalCourses} courses total</p>
+            {curriculumData.semesters.map((sem) => (
+              <div key={sem.semesterNumber ?? 0} className="border border-slate-200 rounded-lg overflow-hidden">
+                <div className="bg-slate-50 px-4 py-2 border-b border-slate-200">
+                  <h3 className="text-sm font-semibold text-slate-700">
+                    {sem.semesterNumber ? `Semester ${sem.semesterNumber}` : 'Unassigned'}
+                  </h3>
+                </div>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs text-slate-500 uppercase tracking-wide">
+                      <th className="px-4 py-2 font-medium">Code</th>
+                      <th className="px-4 py-2 font-medium">Course Name</th>
+                      <th className="px-4 py-2 font-medium text-right">Credits</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {sem.courses.map((course) => (
+                      <tr key={course.id} className="hover:bg-slate-50">
+                        <td className="px-4 py-2">
+                          <span className="font-mono text-xs bg-slate-100 px-2 py-0.5 rounded">{course.code}</span>
+                        </td>
+                        <td className="px-4 py-2 text-slate-700">{course.name}</td>
+                        <td className="px-4 py-2 text-right text-slate-600">{course.creditHour}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ))}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

@@ -107,9 +107,20 @@ export interface Course {
   departmentId: string;
   creditHour: number;
   description?: string;
+  programId?: string | null;
+  semesterNumber?: number | null;
   department?: Department;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ProgramCurriculum {
+  programId: string;
+  totalCourses: number;
+  semesters: Array<{
+    semesterNumber: number | null;
+    courses: Course[];
+  }>;
 }
 
 export interface Semester {
@@ -118,10 +129,51 @@ export interface Semester {
   code: string;
   startDate: string;
   endDate: string;
+  semesterNumber?: number | null;
+  programId?: string | null;
+  program?: Program | null;
   isActive?: boolean;
   isCurrent?: boolean;
+  isCompleted?: boolean;
+  /** Enriched by findAll — number of linked curriculum courses */
+  courseCount?: number | null;
+  /** Enriched by findAll — sum of creditHour for linked curriculum courses */
+  totalCredits?: number | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface SemesterGroup {
+  program: {
+    id: string;
+    name: string;
+    code: string;
+    durationYears: number;
+    totalCreditsRequired: number;
+    departmentId: string;
+    department: { name: string; code: string };
+  } | null;
+  semesters: Semester[];
+  totalSemesters: number;
+  totalCourses: number;
+  totalCredits: number;
+}
+
+export interface SemesterCourseEntry extends Course {
+  departmentName?: string;
+  departmentCode?: string;
+}
+
+export interface SemesterCourses {
+  semester: Semester;
+  courses: SemesterCourseEntry[];
+  totalCourses: number;
+  totalCredits: number;
+  stats: {
+    totalCourses: number;
+    totalCredits: number;
+    byDepartment: Array<{ code: string; name: string; courses: number; credits: number }>;
+  } | null;
 }
 
 export interface ClassSchedule {

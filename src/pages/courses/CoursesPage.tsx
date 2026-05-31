@@ -7,6 +7,7 @@ import { Plus, Pencil, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { coursesApi } from '../../api/courses';
 import { departmentsApi } from '../../api/departments';
+import { programsApi } from '../../api/programs';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -27,6 +28,8 @@ const schema = z.object({
   code: z.string().min(1, 'Code is required').max(20),
   departmentId: z.string().min(1, 'Department is required'),
   creditHour: z.number().min(1).max(6),
+  programId: z.string().optional(),
+  semesterNumber: z.number().min(1).max(8).optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -57,7 +60,13 @@ export default function CoursesPage() {
     queryFn: () => departmentsApi.getAll({ limit: 100 }),
   });
 
+  const { data: programData } = useQuery({
+    queryKey: ['programs-all'],
+    queryFn: () => programsApi.getAll({ limit: 100 }),
+  });
+
   const departmentOptions = (deptData?.items ?? []).map((d) => ({ value: d.id, label: d.name }));
+  const programOptions = (programData?.items ?? []).map((p) => ({ value: p.id, label: `${p.code} – ${p.name}` }));
 
   const {
     register,
@@ -108,13 +117,20 @@ export default function CoursesPage() {
 
   const openCreate = () => {
     setEditItem(null);
-    reset({ name: '', code: '', departmentId: '', creditHour: 3 });
+    reset({ name: '', code: '', departmentId: '', creditHour: 3, programId: '', semesterNumber: undefined });
     setModalOpen(true);
   };
 
   const openEdit = (item: Course) => {
     setEditItem(item);
-    reset({ name: item.name, code: item.code, departmentId: item.departmentId, creditHour: item.creditHour });
+    reset({
+      name: item.name,
+      code: item.code,
+      departmentId: item.departmentId,
+      creditHour: item.creditHour,
+      programId: item.programId ?? '',
+      semesterNumber: item.semesterNumber ?? undefined,
+    });
     setModalOpen(true);
   };
 
@@ -125,10 +141,15 @@ export default function CoursesPage() {
   };
 
   const onSubmit = (formData: FormData) => {
+    const payload = {
+      ...formData,
+      programId: formData.programId || undefined,
+      semesterNumber: formData.semesterNumber || undefined,
+    };
     if (editItem) {
-      updateMutation.mutate({ id: editItem.id, data: formData });
+      updateMutation.mutate({ id: editItem.id, data: payload });
     } else {
-      createMutation.mutate(formData);
+      createMutation.mutate(payload);
     }
   };
 
@@ -258,6 +279,22 @@ export default function CoursesPage() {
             hint="Enter credit hours between 1 and 6"
             required
             {...register('creditHour', { valueAsNumber: true })}
+          />
+          <Select
+            label="Program (optional)"
+            options={programOptions}
+            placeholder="Select program"
+            {...register('programId')}
+          />
+          <Input
+            label="Semester Number (optional)"
+            type="number"
+            min={1}
+            max={8}
+            placeholder="e.g., 1"
+            error={errors.semesterNumber?.message}
+            hint="Semester within the program (1–8)"
+            {...register('semesterNumber', { valueAsNumber: true })}
           />
         </form>
       </Modal>
