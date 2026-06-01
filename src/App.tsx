@@ -47,7 +47,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/ems">
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />
