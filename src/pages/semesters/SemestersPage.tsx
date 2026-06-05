@@ -28,7 +28,7 @@ const schema = z.object({
   startDate: z.string().min(1, 'Start date is required'),
   endDate: z.string().min(1, 'End date is required'),
   programId: z.string().min(1, 'Program is required'),
-  semesterNumber: z.number({ invalid_type_error: 'Semester number is required' }).min(1).max(8),
+  semesterNumber: z.number().min(1, 'Min 1').max(8, 'Max 8'),
 }).refine((d) => new Date(d.endDate) > new Date(d.startDate), {
   message: 'End date must be after start date',
   path: ['endDate'],

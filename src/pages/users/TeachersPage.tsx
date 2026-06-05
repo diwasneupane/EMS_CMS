@@ -154,12 +154,12 @@ export default function TeachersPage() {
   };
 
   const onSubmit = (formData: FormData) => {
-    const payload = { ...formData };
-    if (!payload.password) delete payload.password;
     if (editItem) {
-      updateMutation.mutate({ id: editItem.id, data: payload });
+      const { password, ...rest } = formData;
+      const updatePayload = password ? { ...rest, password } : rest;
+      updateMutation.mutate({ id: editItem.id, data: updatePayload });
     } else {
-      createMutation.mutate(payload);
+      createMutation.mutate({ ...formData, password: formData.password ?? '' });
     }
   };
 

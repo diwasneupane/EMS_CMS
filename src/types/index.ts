@@ -15,6 +15,7 @@ export interface UserFilterParams extends PaginationParams {
   programId?: string;
   isApproved?: boolean;
   isActive?: boolean;
+  role?: string;
 }
 
 // Attendance date range report params

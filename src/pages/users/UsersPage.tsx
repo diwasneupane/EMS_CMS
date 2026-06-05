@@ -43,14 +43,15 @@ export default function UsersPage() {
   const { can } = usePermission();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editItem, setEditItem] = useState<User | null>(null);
   const debouncedSearch = useDebounce(search);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['users', page, debouncedSearch],
-    queryFn: () => usersApi.getAll({ page, limit: 10, search: debouncedSearch }),
+    queryKey: ['users', page, debouncedSearch, roleFilter],
+    queryFn: () => usersApi.getAll({ page, limit: 10, search: debouncedSearch || undefined, role: roleFilter || undefined }),
   });
 
   const { data: deptData } = useQuery({
@@ -81,6 +82,9 @@ export default function UsersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['teachers'] });
+      queryClient.invalidateQueries({ queryKey: ['pending-students'] });
       toast.success('User created successfully');
       closeModal();
     },
@@ -94,6 +98,8 @@ export default function UsersPage() {
     mutationFn: ({ id, data }: { id: string; data: Partial<CreateUserPayload> }) => usersApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['teachers'] });
       toast.success('User updated');
       closeModal();
     },
@@ -107,6 +113,8 @@ export default function UsersPage() {
     mutationFn: usersApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      queryClient.invalidateQueries({ queryKey: ['teachers'] });
       toast.success('User deleted');
       setDeleteId(null);
     },
@@ -254,6 +262,16 @@ export default function UsersPage() {
             placeholder="Search users..."
             className="max-w-xs flex-1"
           />
+          <select
+            value={roleFilter}
+            onChange={(e) => { setRoleFilter(e.target.value); setPage(1); }}
+            className="text-sm border border-slate-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+          >
+            <option value="">All Roles</option>
+            <option value="admin">Admin</option>
+            <option value="teacher">Teacher</option>
+            <option value="student">Student</option>
+          </select>
         </div>
         <Table
           columns={columns}
