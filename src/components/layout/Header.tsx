@@ -1,8 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Menu, LogOut, User, Bell, ChevronDown, Shield, BookOpen, Users } from 'lucide-react';
+import { Menu, LogOut, User, Bell, ChevronDown, Shield, BookOpen, Users, Megaphone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../hooks/useAuth';
+import { announcementsApi } from '../../api/announcements';
 import { getInitials, cn } from '../../lib/utils';
+import { formatDate } from '../../lib/utils';
 
 interface HeaderProps {
   onMenuToggle: () => void;
@@ -14,21 +17,42 @@ const ROLE_LABELS: Record<string, { label: string; color: string }> = {
   student: { label: 'Student', color: 'bg-emerald-100 text-emerald-700' },
 };
 
+const PRIORITY_COLOR: Record<string, string> = {
+  urgent: 'bg-red-100 text-red-700',
+  high: 'bg-orange-100 text-orange-700',
+  medium: 'bg-amber-100 text-amber-700',
+  low: 'bg-slate-100 text-slate-600',
+};
+
 export function Header({ onMenuToggle }: HeaderProps) {
   const { user, logout, isAdmin, isTeacher } = useAuth();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [bellOpen, setBellOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const bellRef = useRef<HTMLDivElement>(null);
+
+  const { data: notifData } = useQuery({
+    queryKey: ['my-announcements-bell'],
+    queryFn: () => announcementsApi.getMyAnnouncements({ limit: 10 }),
+    refetchInterval: 60000,
+  });
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setDropdownOpen(false);
       }
+      if (bellRef.current && !bellRef.current.contains(e.target as Node)) {
+        setBellOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const announcements = notifData?.items ?? [];
+  const unreadCount = announcements.length;
 
   // Derive primary role from roles array (from login response)
   const primaryRole = user?.roles?.[0] ?? (isAdmin ? 'admin' : isTeacher ? 'teacher' : 'student');
@@ -56,10 +80,66 @@ export function Header({ onMenuToggle }: HeaderProps) {
 
       <div className="flex items-center gap-2">
         {/* Notifications */}
-        <button className="relative p-2 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors">
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
-        </button>
+        <div className="relative" ref={bellRef}>
+          <button
+            onClick={() => setBellOpen(!bellOpen)}
+            className="relative p-2 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+          >
+            <Bell className="w-5 h-5" />
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-1 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
+
+          {bellOpen && (
+            <div className="absolute right-0 top-full mt-1.5 w-80 bg-white rounded-xl border border-slate-200 shadow-lg z-50">
+              <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Megaphone className="w-4 h-4 text-slate-500" />
+                  <span className="text-sm font-semibold text-slate-800">Announcements</span>
+                </div>
+                {unreadCount > 0 && (
+                  <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-medium">{unreadCount} new</span>
+                )}
+              </div>
+
+              <div className="max-h-80 overflow-y-auto divide-y divide-slate-50">
+                {announcements.length === 0 ? (
+                  <div className="px-4 py-8 text-center">
+                    <Bell className="w-8 h-8 text-slate-200 mx-auto mb-2" />
+                    <p className="text-sm text-slate-400">No announcements</p>
+                  </div>
+                ) : (
+                  announcements.map((a) => (
+                    <div key={a.id} className="px-4 py-3 hover:bg-slate-50 transition-colors">
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <p className="text-sm font-medium text-slate-800 leading-snug">{a.title}</p>
+                        <span className={cn('text-[10px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap flex-shrink-0', PRIORITY_COLOR[a.priority] ?? PRIORITY_COLOR.low)}>
+                          {a.priority}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 line-clamp-2">{a.content}</p>
+                      <p className="text-[10px] text-slate-400 mt-1">{formatDate(a.createdAt)}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {announcements.length > 0 && (
+                <div className="px-4 py-2.5 border-t border-slate-100">
+                  <button
+                    onClick={() => { setBellOpen(false); navigate('/announcements'); }}
+                    className="text-xs text-primary-600 hover:text-primary-700 font-medium w-full text-center"
+                  >
+                    View all announcements →
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* User Dropdown */}
         <div className="relative" ref={dropdownRef}>

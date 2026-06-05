@@ -29,7 +29,7 @@ const schema = z.object({
   email: z.string().email("Invalid email"),
   password: z.string().min(6, "Min 6 chars").optional().or(z.literal("")),
   phoneNumber: z.string().optional(),
-  departmentId: z.string().optional(),
+  departmentId: z.string().min(1, "Department is required"),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -201,7 +201,7 @@ export default function TeachersPage() {
       header: "Status",
       accessor: "isActive",
       render: (_, row) => (
-        <Badge variant={row.isActive ? "success" : "danger"} dot>
+        <Badge variant={row.isActive ? "success" : "error"} dot>
           {row.isActive ? "Active" : "Inactive"}
         </Badge>
       ),
@@ -353,6 +353,8 @@ export default function TeachersPage() {
               label="Department"
               options={departmentOptions}
               placeholder="Select department"
+              error={errors.departmentId?.message}
+              required
               {...register("departmentId")}
             />
           </div>

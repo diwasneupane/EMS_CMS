@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { usersApi } from '../../api/users';
 import type { CreateUserPayload } from '../../api/users';
 import { departmentsApi } from '../../api/departments';
+import { programsApi } from '../../api/programs';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -29,9 +30,10 @@ const schema = z.object({
   lastName: z.string().min(1, 'Last name is required'),
   email: z.string().email('Invalid email'),
   password: z.string().min(6, 'Min 6 characters').optional().or(z.literal('')),
-  roleType: z.enum(['admin', 'teacher']),
+  roleType: z.enum(['admin', 'teacher', 'student']),
   phoneNumber: z.string().optional(),
   departmentId: z.string().optional(),
+  programId: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -56,16 +58,26 @@ export default function UsersPage() {
     queryFn: () => departmentsApi.getAll({ limit: 100 }),
   });
 
-  const departmentOptions = (deptData?.items ?? []).map((d) => ({ value: d.id, label: d.name }));
+  const { data: programData } = useQuery({
+    queryKey: ['programs-all'],
+    queryFn: () => programsApi.getAll({ limit: 100 }),
+  });
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
+  const departmentOptions = (deptData?.items ?? []).map((d) => ({ value: d.id, label: d.name }));
+  const programOptions = (programData?.items ?? []).map((p) => ({ value: p.id, label: `${p.code} – ${p.name}` }));
+
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
+  const selectedRole = watch('roleType');
+
   const createMutation = useMutation({
-    mutationFn: (payload: { roleType: 'admin' | 'teacher' } & CreateUserPayload) => {
+    mutationFn: (payload: { roleType: 'admin' | 'teacher' | 'student' } & CreateUserPayload) => {
       const { roleType, ...rest } = payload;
-      return roleType === 'admin' ? usersApi.createAdmin(rest) : usersApi.createTeacher(rest);
+      if (roleType === 'admin') return usersApi.createAdmin(rest);
+      if (roleType === 'student') return usersApi.createStudent(rest);
+      return usersApi.createTeacher(rest);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -106,7 +118,7 @@ export default function UsersPage() {
 
   const openCreate = () => {
     setEditItem(null);
-    reset({ firstName: '', lastName: '', email: '', password: '', roleType: 'admin', phoneNumber: '', departmentId: '' });
+    reset({ firstName: '', lastName: '', email: '', password: '', roleType: 'admin', phoneNumber: '', departmentId: '', programId: '' });
     setModalOpen(true);
   };
 
@@ -122,6 +134,7 @@ export default function UsersPage() {
       roleType,
       phoneNumber: item.phoneNumber || '',
       departmentId: item.departmentId || '',
+      programId: item.programId || '',
     });
     setModalOpen(true);
   };
@@ -160,6 +173,7 @@ export default function UsersPage() {
   const roleVariant = (role: string) => {
     if (role === 'admin') return 'error';
     if (role === 'teacher') return 'info';
+    if (role === 'student') return 'success';
     return 'default';
   };
 
@@ -288,6 +302,7 @@ export default function UsersPage() {
               options={[
                 { value: 'admin', label: 'Admin' },
                 { value: 'teacher', label: 'Teacher' },
+                { value: 'student', label: 'Student' },
               ]}
               error={errors.roleType?.message}
               required
@@ -301,6 +316,14 @@ export default function UsersPage() {
             placeholder="Select department (optional)"
             {...register('departmentId')}
           />
+          {selectedRole === 'student' && (
+            <Select
+              label="Program"
+              options={programOptions}
+              placeholder="Select program (optional)"
+              {...register('programId')}
+            />
+          )}
         </form>
       </Modal>
 

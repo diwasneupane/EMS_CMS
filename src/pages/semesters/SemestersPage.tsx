@@ -27,8 +27,8 @@ const schema = z.object({
   code: z.string().min(1, 'Code is required'),
   startDate: z.string().min(1, 'Start date is required'),
   endDate: z.string().min(1, 'End date is required'),
-  programId: z.string().optional(),
-  semesterNumber: z.number().min(1).max(8).optional(),
+  programId: z.string().min(1, 'Program is required'),
+  semesterNumber: z.number({ invalid_type_error: 'Semester number is required' }).min(1).max(8),
 }).refine((d) => new Date(d.endDate) > new Date(d.startDate), {
   message: 'End date must be after start date',
   path: ['endDate'],
@@ -324,7 +324,7 @@ export default function SemestersPage() {
 
   const openCreate = () => {
     setEditItem(null);
-    reset({ name: '', code: '', startDate: '', endDate: '', programId: '', semesterNumber: undefined });
+    reset({ name: '', code: '', startDate: '', endDate: '', programId: '', semesterNumber: undefined as unknown as number });
     setModalOpen(true);
   };
 
@@ -344,13 +344,8 @@ export default function SemestersPage() {
   const closeModal = () => { setModalOpen(false); setEditItem(null); reset(); };
 
   const onSubmit = (formData: FormData) => {
-    const payload = {
-      ...formData,
-      programId: formData.programId || undefined,
-      semesterNumber: formData.semesterNumber || undefined,
-    };
-    if (editItem) updateMutation.mutate({ id: editItem.id, data: payload });
-    else createMutation.mutate(payload);
+    if (editItem) updateMutation.mutate({ id: editItem.id, data: formData });
+    else createMutation.mutate(formData);
   };
 
 
@@ -466,19 +461,22 @@ export default function SemestersPage() {
             <Input label="End Date" type="date" error={errors.endDate?.message} required {...register('endDate')} />
           </div>
           <Select
-            label="Program (optional)"
+            label="Program"
             options={programOptions}
             placeholder="Select program"
+            error={errors.programId?.message}
+            required
             {...register('programId')}
           />
           <Input
-            label="Semester Number (optional)"
+            label="Semester Number"
             type="number"
             min={1}
             max={8}
             placeholder="e.g., 3"
             hint="Links only this program's Semester N courses"
             error={errors.semesterNumber?.message}
+            required
             {...register('semesterNumber', { setValueAs: (v) => (v === '' || v === null || isNaN(Number(v)) ? undefined : Number(v)) })}
           />
         </form>

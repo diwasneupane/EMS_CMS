@@ -59,6 +59,11 @@ export const usersApi = {
     return data;
   },
 
+  createStudent: async (payload: CreateUserPayload): Promise<User> => {
+    const { data } = await apiClient.post('/users/student', payload);
+    return data;
+  },
+
   update: async (id: string, payload: Partial<CreateUserPayload>): Promise<User> => {
     const { data } = await apiClient.patch(`/users/${id}`, payload);
     return data;

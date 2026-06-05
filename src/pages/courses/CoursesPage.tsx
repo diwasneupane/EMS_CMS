@@ -28,8 +28,8 @@ const schema = z.object({
   code: z.string().min(1, 'Code is required').max(20),
   departmentId: z.string().min(1, 'Department is required'),
   creditHour: z.number().min(1).max(6),
-  programId: z.string().optional(),
-  semesterNumber: z.number().min(1).max(8).optional(),
+  programId: z.string().min(1, 'Program is required'),
+  semesterNumber: z.number({ invalid_type_error: 'Semester number is required' }).min(1).max(8),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -117,7 +117,7 @@ export default function CoursesPage() {
 
   const openCreate = () => {
     setEditItem(null);
-    reset({ name: '', code: '', departmentId: '', creditHour: 3, programId: '', semesterNumber: undefined });
+    reset({ name: '', code: '', departmentId: '', creditHour: 3, programId: '', semesterNumber: undefined as unknown as number });
     setModalOpen(true);
   };
 
@@ -141,11 +141,7 @@ export default function CoursesPage() {
   };
 
   const onSubmit = (formData: FormData) => {
-    const payload = {
-      ...formData,
-      programId: formData.programId || undefined,
-      semesterNumber: formData.semesterNumber || undefined,
-    };
+    const payload = { ...formData };
     if (editItem) {
       updateMutation.mutate({ id: editItem.id, data: payload });
     } else {
@@ -281,19 +277,22 @@ export default function CoursesPage() {
             {...register('creditHour', { valueAsNumber: true })}
           />
           <Select
-            label="Program (optional)"
+            label="Program"
             options={programOptions}
             placeholder="Select program"
+            error={errors.programId?.message}
+            required
             {...register('programId')}
           />
           <Input
-            label="Semester Number (optional)"
+            label="Semester Number"
             type="number"
             min={1}
             max={8}
             placeholder="e.g., 1"
             error={errors.semesterNumber?.message}
             hint="Semester within the program (1–8)"
+            required
             {...register('semesterNumber', { setValueAs: (v) => (v === '' || v === null || isNaN(Number(v)) ? undefined : Number(v)) })}
           />
         </form>
