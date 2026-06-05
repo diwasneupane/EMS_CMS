@@ -294,7 +294,7 @@ export default function CoursesPage() {
             placeholder="e.g., 1"
             error={errors.semesterNumber?.message}
             hint="Semester within the program (1–8)"
-            {...register('semesterNumber', { valueAsNumber: true })}
+            {...register('semesterNumber', { setValueAs: (v) => (v === '' || v === null || isNaN(Number(v)) ? undefined : Number(v)) })}
           />
         </form>
       </Modal>

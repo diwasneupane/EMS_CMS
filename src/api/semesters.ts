@@ -62,4 +62,8 @@ export const semestersApi = {
     const { data } = await apiClient.patch(`/semesters/${id}/complete`);
     return data;
   },
+
+  delete: async (id: string): Promise<void> => {
+    await apiClient.delete(`/semesters/${id}`);
+  },
 };

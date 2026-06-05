@@ -199,10 +199,10 @@ export default function TeachersPage() {
     },
     {
       header: "Status",
-      accessor: "role",
-      render: () => (
-        <Badge variant="success" dot>
-          Active
+      accessor: "isActive",
+      render: (_, row) => (
+        <Badge variant={row.isActive ? "success" : "danger"} dot>
+          {row.isActive ? "Active" : "Inactive"}
         </Badge>
       ),
     },

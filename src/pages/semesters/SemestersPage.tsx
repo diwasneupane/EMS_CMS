@@ -310,7 +310,7 @@ export default function SemestersPage() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: semestersApi.delete,
+    mutationFn: (id: string) => semestersApi.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['semesters-by-program'] });
       toast.success('Semester deleted');
@@ -479,7 +479,7 @@ export default function SemestersPage() {
             placeholder="e.g., 3"
             hint="Links only this program's Semester N courses"
             error={errors.semesterNumber?.message}
-            {...register('semesterNumber', { valueAsNumber: true })}
+            {...register('semesterNumber', { setValueAs: (v) => (v === '' || v === null || isNaN(Number(v)) ? undefined : Number(v)) })}
           />
         </form>
       </Modal>

@@ -52,7 +52,7 @@ export const useAuthStore = create<AuthState>()(
           refreshToken: null,
           isAuthenticated: false,
         });
-        window.location.href = '/login';
+        window.location.href = '/ems/login';
       },
     }),
     {
